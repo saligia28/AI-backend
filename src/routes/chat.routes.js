@@ -11,13 +11,13 @@ const router = express.Router()
  */
 router.post('/chat', async (req, res) => {
   try {
-    const { messages, model } = req.body
+    const { messages, provider, model } = req.body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json(error('messages 参数必须是非空数组', 400))
     }
 
-    const result = await aiService.chat(messages, { model })
+    const result = await aiService.chat(messages, { provider, model })
 
     res.json(success(result))
   } catch (err) {
@@ -32,7 +32,7 @@ router.post('/chat', async (req, res) => {
  */
 router.post('/chat/stream', async (req, res) => {
   try {
-    const { messages, model } = req.body
+    const { messages, provider, model } = req.body
 
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return res.status(400).json(error('messages 参数必须是非空数组', 400))
@@ -42,7 +42,7 @@ router.post('/chat/stream', async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache')
     res.setHeader('Connection', 'keep-alive')
 
-    const stream = await aiService.chatStream(messages, { model })
+    const stream = await aiService.chatStream(messages, { provider, model })
 
     for await (const chunk of stream) {
       const content = chunk.choices[0]?.delta?.content
@@ -57,6 +57,20 @@ router.post('/chat/stream', async (req, res) => {
     logger.error('Stream chat route error:', err)
     res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
     res.end()
+  }
+})
+
+/**
+ * GET /api/providers
+ * 获取可用的 AI 提供商列表
+ */
+router.get('/providers', (req, res) => {
+  try {
+    const providers = aiService.getAvailableProviders()
+    res.json(success({ providers }))
+  } catch (err) {
+    logger.error('Providers route error:', err)
+    res.status(500).json(error(err.message))
   }
 })
 

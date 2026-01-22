@@ -1,13 +1,33 @@
-import OpenAI from 'openai'
+import factory from '../adapters/factory.js'
+import DeepSeekAdapter from '../adapters/deepseek.adapter.js'
+import OpenAIAdapter from '../adapters/openai.adapter.js'
 import config from '../config/index.js'
 import logger from '../utils/logger.js'
 
 class AIService {
   constructor() {
-    this.client = new OpenAI({
-      apiKey: config.ai.apiKey,
-      baseURL: config.ai.baseURL,
-    })
+    this.init()
+  }
+
+  init() {
+    // 注册DeepSeek
+    if (config.ai.deepseek.apiKey) {
+      factory.register('deepseek', DeepSeekAdapter, config.ai.deepseek)
+      logger.info('Register provider: deepseek')
+    }
+
+    // 注册OpenAI
+    if (config.ai.openai.apiKey) {
+      factory.register('openai', OpenAIAdapter, config.ai.openai)
+      logger.info('Register provider: OpenAI')
+    }
+
+    if (factory.list().length === 0) {
+      logger.error('No AI provider configured!')
+      throw new Error('At lease one AI provider must be configured')
+    }
+
+    logger.info(`Available providers: ${factory.list().join(',')}`)
   }
 
   /**
@@ -16,30 +36,12 @@ class AIService {
    * @param {Object} options - 配置选项
    */
   async chat(messages, options = {}) {
-    try {
-      logger.info('Sending chat request', { messagesCount: messages.length })
+    const provider = options.provider || config.ai.defaultProvider
+    const adapter = factory.get(provider)
 
-      const model = options.model || config.ai.model
+    logger.info(`Using provider: ${provider}`)
 
-      // 从 options 中移除 model，避免被 undefined 覆盖
-      const { model: _, ...restOptions } = options
-
-      const response = await this.client.chat.completions.create({
-        model,
-        messages,
-        stream: false,
-        ...restOptions,
-      })
-
-      logger.info('Chat request completed', {
-        usage: response.usage,
-      })
-
-      return response.choices[0].message
-    } catch (error) {
-      logger.error('Chat request failed', error.message)
-      throw error
-    }
+    return await adapter.chat(messages, options)
   }
 
   /**
@@ -48,26 +50,19 @@ class AIService {
    * @param {Object} options - 配置选项
    */
   async chatStream(messages, options = {}) {
-    try {
-      logger.info('Sending stream chat request', { messagesCount: messages.length })
+    const provider = options.provider || config.ai.defaultProvider
+    const adapter = factory.get(provider)
 
-      const model = options.model || config.ai.model
+    logger.info(`Using provider: ${provider}`)
 
-      // 从 options 中移除 model，避免被 undefined 覆盖
-      const { model: _, ...restOptions } = options
+    return await adapter.chatStream(messages, options)
+  }
 
-      const stream = await this.client.chat.completions.create({
-        model,
-        messages,
-        stream: true,
-        ...restOptions,
-      })
-
-      return stream
-    } catch (error) {
-      logger.error('Stream chat request failed', error.message)
-      throw error
-    }
+  /**
+   * 获取可用的提供商列表
+   */
+  getAvailableProviders() {
+    return factory.list()
   }
 }
 
