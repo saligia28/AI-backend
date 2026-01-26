@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 30
+    },
+    "auditLog": "/Users/jianglin/Desktop/backend/AI-backend/logs/.0764374dba0884e801b3b35094f7ac30038a374c-audit.json",
+    "files": [
+        {
+            "date": 1769408161635,
+            "name": "/Users/jianglin/Desktop/backend/AI-backend/logs/error-2026-01-26.log",
+            "hash": "cd38792986f9dae3d9e12ea33432750b373898993b83433d4de577351d528d70"
+        }
+    ],
+    "hashType": "sha256"
+}

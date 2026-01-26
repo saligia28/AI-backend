@@ -1,7 +1,9 @@
 import express from 'express'
-import aiService from '../services/ai.server.js'
-import { success, error } from '../utils/response.js'
-import logger from '../utils/logger.js'
+import aiService from '../services/ai.service.js'
+import { success } from '../utils/response.js'
+import { asyncHandler } from '../utils/asyncHandler.js'
+import { BadRequestError, NotFoundError } from '../errors/index.js'
+import { validateMessages } from '../middleware/validator.js'
 
 const router = express.Router()
 
@@ -9,33 +11,34 @@ const router = express.Router()
  * POST /api/chat
  * 普通聊天接口
  */
-router.post('/chat', async (req, res) => {
-  try {
+router.post(
+  '/chat',
+  validateMessages,
+  asyncHandler(async (req, res) => {
     const { messages, provider, model } = req.body
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json(error('messages 参数必须是非空数组', 400))
+    // 使用错误类抛出错误
+    if (!messages || messages.length === 0) {
+      throw new BadRequestError('messages 不能为空')
     }
 
     const result = await aiService.chat(messages, { provider, model })
-
     res.json(success(result))
-  } catch (err) {
-    logger.error('Chat route error:', err)
-    res.status(500).json(err.message)
-  }
-})
+  }),
+)
 
 /**
  * POST /api/chat/stream
  * 流式聊天接口
  */
-router.post('/chat/stream', async (req, res) => {
-  try {
+router.post(
+  '/chat/stream',
+  validateMessages,
+  asyncHandler(async (req, res) => {
     const { messages, provider, model } = req.body
 
-    if (!messages || !Array.isArray(messages) || messages.length === 0) {
-      return res.status(400).json(error('messages 参数必须是非空数组', 400))
+    if (!messages || messages.length === 0) {
+      throw new BadRequestError('messages 不能为空')
     }
 
     res.setHeader('Content-Type', 'text/event-stream; charset=utf-8')
@@ -51,27 +54,26 @@ router.post('/chat/stream', async (req, res) => {
       }
     }
 
-    res.write(`data: [DONE]\n\n`)
+    res.write('data: [DONE]\n\n')
     res.end()
-  } catch (err) {
-    logger.error('Stream chat route error:', err)
-    res.write(`data: ${JSON.stringify({ error: err.message })}\n\n`)
-    res.end()
-  }
-})
+  }),
+)
 
 /**
  * GET /api/providers
  * 获取可用的 AI 提供商列表
  */
-router.get('/providers', (req, res) => {
-  try {
+router.get(
+  '/providers',
+  asyncHandler(async (req, res) => {
     const providers = aiService.getAvailableProviders()
+
+    if (providers.length === 0) {
+      throw new NotFoundError('没有可用的 AI 提供商')
+    }
+
     res.json(success({ providers }))
-  } catch (err) {
-    logger.error('Providers route error:', err)
-    res.status(500).json(error(err.message))
-  }
-})
+  }),
+)
 
 export default router

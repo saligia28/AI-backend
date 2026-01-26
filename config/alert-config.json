@@ -1,0 +1,14 @@
+{
+  "threshold": 5,
+  "interval": 60,
+  "notifiers": [
+    {
+      "type": "email",
+      "recipients": ["admin@example.com", "dev@example.com"]
+    },
+    {
+      "type": "webhook",
+      "url": "https://hooks.example.com/alerts"
+    }
+  ]
+}

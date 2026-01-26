@@ -5,7 +5,7 @@ import { corsMiddleware } from './middleware/cors.js'
 import { requestLoggerMiddleware } from './middleware/requestLogger.js'
 import { performanceMiddleware, requestCounterMiddleware } from './middleware/performance.js'
 import { validateBodySize } from './middleware/validator.js'
-import logger from './utils/logger.js'
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js'
 
 const app = express()
 // ===== 全局中间件 =====
@@ -32,21 +32,10 @@ app.use(validateBodySize(config.security.maxBodySize))
 // ===== 路由 =====
 app.use('/api', routes)
 
-// ===== 404 处理 =====
-app.use((_req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'Route not found',
-  })
-})
+// ===== 404 处理（必须在路由之后）=====
+app.use(notFoundHandler)
 
-// ===== 错误处理（后续实现）=====
-app.use((err, req, res, next) => {
-  logger.error('Unhandled error:', err)
-  res.status(500).json({
-    success: false,
-    message: config.isDev ? err.message : 'Internal server error',
-  })
-})
+// ===== 错误处理（必须在最后）=====
+app.use(errorHandler)
 
 export default app
