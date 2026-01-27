@@ -13,6 +13,7 @@
   "dependencies": {
     "dotenv": "^17.2.3",
     "express": "^5.2.1",
+    "joi": "^18.0.2",
     "openai": "^6.16.0",
     "winston": "^3.19.0",
     "winston-daily-rotate-file": "^5.0.0"
