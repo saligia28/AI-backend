@@ -6,14 +6,14 @@
     "auditLog": "/Users/jianglin/Desktop/backend/AI-backend/logs/.0764374dba0884e801b3b35094f7ac30038a374c-audit.json",
     "files": [
         {
-            "date": 1769408161635,
-            "name": "/Users/jianglin/Desktop/backend/AI-backend/logs/error-2026-01-26.log",
-            "hash": "cd38792986f9dae3d9e12ea33432750b373898993b83433d4de577351d528d70"
+            "date": 1770173468659,
+            "name": "/Users/jianglin/Desktop/backend/AI-backend/logs/error-2026-02-04.log",
+            "hash": "718a28614c8266860e1ff59bccd0d35e36c906b16a241f7ab5957d7d51ea85b5"
         },
         {
-            "date": 1769499974445,
-            "name": "/Users/jianglin/Desktop/backend/AI-backend/logs/error-2026-01-27.log",
-            "hash": "03de4cfa4e07033842a4dc3f87bb0291e1fafa173b5d0331db334b83b9e9e312"
+            "date": 1772417848799,
+            "name": "/Users/jianglin/Desktop/backend/AI-backend/logs/error-2026-03-02.log",
+            "hash": "c2b2d6ad604211a342c961deefef559f85cae9da6bdf8eeceec84448ccfb4c70"
         }
     ],
     "hashType": "sha256"
