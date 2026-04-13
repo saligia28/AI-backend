@@ -7,6 +7,17 @@ import { BadRequestError } from '../errors/index.js'
 const messageSchema = Joi.object({
   role: Joi.string().valid('system', 'user', 'assistant').required(),
   content: Joi.string().required().max(10000),
+  name: Joi.string().optional(),
+  function_call: Joi.object().optional(),
+})
+
+/**
+ * Function Schema(用于验证functions参数)
+ */
+const functionSchema = Joi.object({
+  name: Joi.string().required(),
+  description: Joi.string().required(),
+  parameters: Joi.object().required(),
 })
 
 /**
@@ -18,6 +29,7 @@ const chatRequestSchema = Joi.object({
   model: Joi.string().optional(),
   temperature: Joi.number().min(0).max(2).optional(),
   maxTokens: Joi.number().min(1).max(8000).optional(),
+  functions: Joi.array().items(functionSchema).optional(), // ← 支持 Function Calling
 })
 
 /**
@@ -29,7 +41,10 @@ export function validateChatRequest(data) {
   })
 
   if (error) {
-    const messages = error.details.map(d => d.message)
+    const messages = error.details.map(detail => ({
+      field: detail.path.join('.'),
+      message: detail.message,
+    }))
     throw new BadRequestError(`参数验证失败: ${messages.join(', ')}`)
   }
 

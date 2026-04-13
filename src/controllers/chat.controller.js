@@ -13,71 +13,55 @@ class ChatController {
     const validatedData = validateChatRequest(req.body)
     const messages = [...validatedData.messages]
 
-    // 第一次调用 AI
-    let result = await aiService.chat(messages, {
+    const callOptions = {
       provider: validatedData.provider,
       model: validatedData.model,
       temperature: validatedData.temperature,
       max_tokens: validatedData.maxTokens,
       functions: validatedData.functions, // ← 传入函数定义
-    })
+    }
 
-    // 检查是否需要调用函数
-    if (result.function_call) {
+    // 第一次调用 AI
+    let result = await aiService.chat(messages, callOptions)
+
+    // ✅ 改成 while：AI 只要还想调用函数，就继续循环
+    const MAX_ITERATIONS = 5 // 防止无限循环
+    let iterations = 0
+
+    while (result.function_call && iterations < MAX_ITERATIONS) {
+      iterations++
+
       const { name, arguments: args } = result.function_call
+      logger.info(`[iteration ${iterations}] AI requested function: ${name}`, { args })
 
-      logger.info(`AI requested function call`, { name, args })
-
+      // 执行函数（executor 内部会处理 JSON 解析 + 错误）
+      let functionResult
       try {
-        // 执行函数
-        const functionResult = functionExecutor.execute(name, args)
-
+        functionResult = functionExecutor.execute(name, args)
         logger.info(`Function ${name} executed`, { result: functionResult })
-
-        // 添加 assistant 消息(带 function_call)
-        messages.push({
-          role: 'assistant',
-          content: null,
-          function_call: result.function_call,
-        })
-
-        // 添加 function 消息(函数执行结果)
-        messages.push({
-          role: 'function',
-          name: name,
-          content: typeof functionResult === 'string' ? functionResult : JSON.stringify(functionResult),
-        })
-
-        // 第二次调用 AI,让它生成最终回复
-        result = await aiService.chat(messages, {
-          provider: validatedData.provider,
-          model: validatedData.model,
-          temperature: validatedData.temperature,
-          max_tokens: validatedData.maxTokens,
-        })
-
-        logger.info(`Final response generated`)
       } catch (error) {
-        logger.error(`Function execution failed`, { error: error.message })
-
-        // 告诉 AI 函数执行失败
-        messages.push({
-          role: 'assistant',
-          content: null,
-          function_call: result.function_call,
-        })
-        messages.push({
-          role: 'function',
-          name: name,
-          content: JSON.stringify({ error: error.message }),
-        })
-
-        // 让 AI 生成错误回复
-        result = await aiService.chat(messages, {
-          provider: validatedData.provider,
-          model: validatedData.model,
-        })
+        logger.error(`Function ${name} failed`, { error: error.message })
+        // 把错误告诉 AI，让它自行处理（而不是直接抛出中断流程）
+        functionResult = { error: error.message }
       }
+
+      // 把这一轮的 assistant（带 function_call）+ function 结果 加入历史
+      messages.push({
+        role: 'assistant',
+        content: null,
+        function_call: result.function_call,
+      })
+      messages.push({
+        role: 'function',
+        name,
+        content: typeof functionResult === 'string' ? functionResult : JSON.stringify(functionResult),
+      })
+      // 再次调用 AI（带上函数结果）
+      result = await aiService.chat(messages, callOptions)
+    }
+
+    if (iterations >= MAX_ITERATIONS) {
+      logger.warn(`Function call loop hit MAX_ITERATIONS (${MAX_ITERATIONS}), forcing stop`)
     }
 
     return res.json(success(result))

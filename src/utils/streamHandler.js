@@ -69,4 +69,12 @@ export class StreamHandler {
       this.end()
     }
   }
+
+  /**
+   * ✅ 新增：支持 Function Calling 的流处理
+   *
+   * 返回值：
+   *   - { type: 'done' }                          → 正常结束，纯文字回复已流出
+   *   - { type: 'function_call', name, arguments } → AI 要调用函数，调用方去执行
+   */
 }
