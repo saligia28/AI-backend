@@ -42,6 +42,36 @@ class BaseAdapter {
   formatResponse(response) {
     return response
   }
+
+  /**
+   * 将 message 中的 tool_calls / function_call 归一化为统一字段
+   * 当前控制器仍按单函数循环执行，所以这里只提取第一个函数调用
+   */
+  normalizeFunctionCall(message = {}) {
+    if (message.function_call) {
+      return {
+        function_call: message.function_call,
+        tool_calls: message.tool_calls,
+      }
+    }
+
+    const firstToolCall = message.tool_calls?.find((toolCall) => toolCall?.type === 'function' && toolCall.function)
+
+    if (!firstToolCall) {
+      return {
+        function_call: undefined,
+        tool_calls: message.tool_calls,
+      }
+    }
+
+    return {
+      function_call: {
+        name: firstToolCall.function.name,
+        arguments: firstToolCall.function.arguments,
+      },
+      tool_calls: message.tool_calls,
+    }
+  }
 }
 
 export default BaseAdapter

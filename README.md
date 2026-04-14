@@ -162,8 +162,18 @@ npm start
 {
   "success": true,
   "data": {
-    "content": "3 + 5 = 8",
-    "role": "assistant"
+    "content": "3 + 5 = 8，现在北京时间是 2026/04/14 16:00:00",
+    "role": "assistant",
+    "calledFunctions": [
+      {
+        "name": "sum",
+        "arguments": "{\"a\":3,\"b\":5}"
+      },
+      {
+        "name": "getTime",
+        "arguments": "{\"timezone\":\"Asia/Shanghai\"}"
+      }
+    ]
   }
 }
 ```
@@ -177,6 +187,10 @@ npm start
 **响应格式**
 
 ```
+data: {"type":"function_call","name":"sum","arguments":"{\"a\":3,\"b\":5}"}
+
+data: {"type":"function_call","name":"getTime","arguments":"{\"timezone\":\"Asia/Shanghai\"}"}
+
 data: {"choices":[{"delta":{"content":"3"},...}]}
 
 data: {"choices":[{"delta":{"content":" +"},...}]}

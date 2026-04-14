@@ -63,9 +63,13 @@ class OpenAIAdapter extends BaseAdapter {
   }
 
   formatResponse(message) {
+    const { function_call, tool_calls } = this.normalizeFunctionCall(message)
+
     return {
       role: message.role,
       content: message.content,
+      function_call,
+      tool_calls,
       provider: 'openai',
     }
   }
