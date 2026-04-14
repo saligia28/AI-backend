@@ -20,12 +20,35 @@ export function validateMessages(req, res, next) {
 
   // 验证每条消息的格式
   for (const [index, message] of messages.entries()) {
-    if (!message.role || !message.content) {
-      return res.status(400).json(error(`messages[${index}] 缺少 role 或 content`, 400))
+    if (!message.role) {
+      return res.status(400).json(error(`messages[${index}] 缺少 role`, 400))
     }
 
-    if (!['system', 'user', 'assistant'].includes(message.role)) {
+    if (!['system', 'user', 'assistant', 'tool'].includes(message.role)) {
       return res.status(400).json(error(`messages[${index}] role 无效`, 400))
+    }
+
+    if (message.role === 'assistant') {
+      const hasContent = typeof message.content === 'string'
+      const hasToolCalls = Array.isArray(message.tool_calls) && message.tool_calls.length > 0
+
+      if (!hasContent && message.content !== null && !hasToolCalls) {
+        return res.status(400).json(error(`messages[${index}] assistant 消息格式无效`, 400))
+      }
+
+      continue
+    }
+
+    if (message.role === 'tool') {
+      if (typeof message.content !== 'string' || !message.tool_call_id) {
+        return res.status(400).json(error(`messages[${index}] tool 消息格式无效`, 400))
+      }
+
+      continue
+    }
+
+    if (typeof message.content !== 'string' || message.content.length === 0) {
+      return res.status(400).json(error(`messages[${index}] 缺少有效 content`, 400))
     }
   }
 

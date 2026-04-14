@@ -1,6 +1,21 @@
 import functionExecutor from '../utils/functionExecutor.js'
 import { getTime } from '../../functions/getTime.js'
 import { sum } from '../../functions/sum.js'
+import { getTimeSchema } from '../../schemas/getTime.schema.js'
+import { sumSchema } from '../../schemas/sum.schema.js'
+
+const functionSchemas = [getTimeSchema, sumSchema]
+
+export function getFunctionDefinitions() {
+  return structuredClone(functionSchemas)
+}
+
+export function getToolDefinitions() {
+  return getFunctionDefinitions().map((schema) => ({
+    type: 'function',
+    function: schema,
+  }))
+}
 
 /**
  * 初始化函数执行器
